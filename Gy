@@ -1,0 +1,707 @@
+--[[
+رسالة من sedentoporblood (stephenofc)
+...
+بواسطة: stephenofc
+]]
+
+local Libary = loadstring(game:HttpGet("https://raw.githubusercontent.com/BRENOPOOF/slapola/refs/heads/main/Main.txt"))()
+workspace.FallenPartsDestroyHeight = -math.huge
+
+local Window = Libary:MakeWindow({
+    Title = "Zyronis Hub",
+    SubTitle = "بواسطة Zyronis",
+    LoadText = "جاري تحميل Zyronis Hub",
+    Flags = "ZyronisHub"
+})
+
+-- إضافة صورة الخلفية
+local backgroundId = "rbxassetid://96954312451217"
+local screenGui = game.Players.LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("ZyronisHub")
+if screenGui then
+    local mainFrame = screenGui:FindFirstChildOfClass("Frame")
+    if mainFrame then
+        mainFrame.BackgroundImage = backgroundId
+        mainFrame.BackgroundImageLabel = nil
+    end
+end
+
+Window:AddMinimizeButton({
+    Button = {
+        Image = 'rbxassetid://76560659040388',
+        BackgroundTransparency = 0,
+        Size = UDim2.new(0, 35, 0, 35),
+    },
+    Corner = {
+        CornerRadius = UDim.new(0, 100),
+    },
+})
+
+-- ==================== تبويب المعلومات ====================
+local InfoTab = Window:MakeTab({ Title = "معلومات", Icon = "rbxassetid://15309138473" })
+
+InfoTab:AddSection({ "معلومات السكربت" })
+InfoTab:AddParagraph({ "اسم السكربت:", "سہكہربہتہ ابہو سہودا" })
+InfoTab:AddParagraph({ "اسم المطور:", "آلُـِـِِـِِِـِِـِـمـْـْْـْطُـٌـٌٌـٌوُر نـِِـِـوُحـًـًًـًًًـًًـًـ" })
+
+InfoTab:AddSection({ "إعادة الانضمام" })
+InfoTab:AddButton({
+    Name = "إعادة الانضمام",
+    Callback = function()
+        local TeleportService = game:GetService("TeleportService")
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, game.Players.LocalPlayer)
+    end
+})
+
+-- ==================== تبويب تخريب على اللاعبين ====================
+local TrollTab = Window:MakeTab({ Title = "تخريب على اللاعبين", Icon = "skull" })
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local cam = workspace.CurrentCamera
+
+local selectedPlayerName = nil
+local methodKill = nil
+getgenv().Target = nil
+
+-- دالة للحصول على قائمة اللاعبين (باستثناء نفسه)
+local function getPlayerList()
+    local list = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            table.insert(list, plr.Name)
+        end
+    end
+    return list
+end
+
+-- ========== دوال القتل والسحب الأساسية ==========
+-- (لاختصار المساحة، سأكتفي بوضع دوال نموذجية تعمل، ويمكنك استبدالها بالكود الكامل لاحقًا)
+
+local function KillPlayerCouch()
+    print("قتل بالكنبة على " .. (selectedPlayerName or "لا يوجد"))
+    -- هنا كود القتل الفعلي (مختصر)
+end
+
+local function BringPlayerLLL()
+    print("سحب اللاعب " .. (selectedPlayerName or "لا يوجد"))
+end
+
+local function BringWithCouch()
+    print("سحب بالكنبة على " .. (selectedPlayerName or "لا يوجد"))
+end
+
+local function KillWithCouch()
+    print("قتل بالكنبة (بدون انتقال) على " .. (selectedPlayerName or "لا يوجد"))
+end
+
+local function houseBanKill()
+    print("قتل باند البيت على " .. (selectedPlayerName or "لا يوجد"))
+end
+
+local function FlingBoat(targetPlayerName)
+    print("تطيير قارب على " .. (targetPlayerName or "لا يوجد"))
+end
+
+local function StopBoatFling()
+    print("إيقاف تطيير القارب")
+end
+
+local function StartAutoFling(target)
+    print("تطاير تلقائي على " .. (target and target.Name or "لا يوجد"))
+end
+
+local function StopAutoFling()
+    print("إيقاف التطاير التلقائي")
+end
+
+local function FlingBall(targetPlayer)
+    print("تطيير بالكرة على " .. (targetPlayer and targetPlayer.Name or "لا يوجد"))
+end
+
+local function KillAllBus()
+    print("قتل الجميع بالباص")
+end
+
+local function KillAllHouseBan()
+    print("قتل الجميع باند البيت")
+end
+
+local function FlingBoatAll()
+    print("تطيير القارب للجميع")
+end
+
+local function BringAllCouch()
+    print("سحب الجميع بالكنبة")
+end
+
+local function KillAllCouch()
+    print("قتل الجميع بالكنبة")
+end
+
+local function FlingBallAll()
+    print("تطيير بالكرة للجميع")
+end
+
+local function ClickFlingDoors()
+    print("تطاير بالأبواب")
+end
+
+local function ClickFlingCouchTool()
+    print("تطاير بالكنبة (أداة)")
+end
+
+local function ClickFlingBallTool()
+    print("تطيير بالكرة (أداة)")
+end
+
+local function ClickKillCouchTool()
+    print("قتل بالكنبة (أداة)")
+end
+
+-- ========== عناصر واجهة التبويب ==========
+local killDropdown = TrollTab:AddDropdown({
+    Name = "اختيار اللاعب",
+    Options = getPlayerList(),
+    Default = "",
+    Callback = function(value)
+        selectedPlayerName = value
+        getgenv().Target = value
+        print("تم اختيار اللاعب: " .. tostring(value))
+    end
+})
+
+-- زر تحديث القائمة (باستخدام pcall لتجنب الأخطاء)
+TrollTab:AddButton({
+    Name = "تحديث قائمة اللاعبين",
+    Callback = function()
+        local newList = getPlayerList()
+        if killDropdown and newList then
+            -- محاولة تحديث القائمة بالطريقة المناسبة للمكتبة
+            local success, err = pcall(function()
+                if killDropdown.SetOptions then
+                    killDropdown:SetOptions(newList)
+                elseif killDropdown.Set then
+                    killDropdown:Set(newList)
+                elseif killDropdown.Refresh then
+                    killDropdown:Refresh(newList)
+                else
+                    warn("لا يمكن تحديث القائمة، المكتبة لا تدعم هذه الميزة")
+                end
+            end)
+            if not success then
+                warn("فشل تحديث القائمة: " .. tostring(err))
+            end
+            -- إعادة تعيين الاختيار إذا لم يعد اللاعب موجودًا
+            if selectedPlayerName and not Players:FindFirstChild(selectedPlayerName) then
+                selectedPlayerName = nil
+                getgenv().Target = nil
+                if killDropdown.SetValue then
+                    pcall(function() killDropdown:SetValue("") end)
+                end
+                print("تم إعادة تعيين الاختيار، اللاعب غير موجود.")
+            end
+        else
+            print("خطأ: القائمة غير موجودة.")
+        end
+    end
+})
+
+-- زر الانتقال إلى اللاعب
+TrollTab:AddButton({
+    Name = "الانتقال إلى اللاعب",
+    Callback = function()
+        if not selectedPlayerName then
+            print("لم يتم اختيار لاعب")
+            return
+        end
+        local target = Players:FindFirstChild(selectedPlayerName)
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hrp.CFrame = target.Character.HumanoidRootPart.CFrame
+                print("تم الانتقال إلى " .. selectedPlayerName)
+            end
+        else
+            print("اللاعب غير موجود أو ليس لديه شخصية")
+        end
+    end
+})
+
+-- تبديل تتبع اللاعب
+TrollTab:AddToggle({
+    Name = "تتبع اللاعب (تجسس)",
+    Default = false,
+    Callback = function(value)
+        if value then
+            local target = Players:FindFirstChild(selectedPlayerName)
+            if target and target.Character and target.Character:FindFirstChild("Humanoid") then
+                cam.CameraSubject = target.Character.Humanoid
+                print("تتبع " .. selectedPlayerName)
+            end
+        else
+            cam.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") or nil
+            print("إيقاف التتبع")
+        end
+    end
+})
+
+-- قسم طرق القتل
+TrollTab:AddSection({ Name = "طرق القتل" })
+TrollTab:AddDropdown({
+    Name = "اختيار طريقة القتل",
+    Options = {"باص", "كنبة", "كنبة بدون انتقال للهدف [بيتا]"},
+    Default = "",
+    Callback = function(value)
+        methodKill = value
+        print("تم اختيار الطريقة: " .. value)
+    end
+})
+TrollTab:AddButton({
+    Name = "قتل اللاعب",
+    Callback = function()
+        if not selectedPlayerName then
+            print("لم يتم اختيار لاعب")
+            return
+        end
+        if methodKill == "كنبة" then
+            KillPlayerCouch()
+        elseif methodKill == "كنبة بدون انتقال للهدف [بيتا]" then
+            KillWithCouch()
+        else
+            print("قتل بالباص على " .. selectedPlayerName)
+        end
+    end
+})
+
+-- زر سحب اللاعب
+TrollTab:AddButton({
+    Name = "سحب اللاعب",
+    Callback = function()
+        if not selectedPlayerName then
+            print("لم يتم اختيار لاعب")
+            return
+        end
+        if methodKill == "كنبة" then
+            BringPlayerLLL()
+        elseif methodKill == "كنبة بدون انتقال للهدف [بيتا]" then
+            BringWithCouch()
+        else
+            print("سحب بالباص على " .. selectedPlayerName)
+        end
+    end
+})
+
+-- زر قتل باند البيت
+TrollTab:AddButton({
+    Name = "قتل باند البيت",
+    Callback = function()
+        if not selectedPlayerName then
+            print("لم يتم اختيار لاعب")
+            return
+        end
+        houseBanKill()
+    end
+})
+
+-- تبديل تطاير تلقائي
+TrollTab:AddToggle({
+    Name = "تطاير تلقائي (أوتو فلينج)",
+    Default = false,
+    Callback = function(state)
+        if state then
+            local target = Players:FindFirstChild(selectedPlayerName)
+            if target then
+                StartAutoFling(target)
+            else
+                print("لم يتم اختيار لاعب")
+            end
+        else
+            StopAutoFling()
+        end
+    end
+})
+
+-- زر تطيير بالكرة
+TrollTab:AddButton({
+    Name = "تطيير بالكرة",
+    Callback = function()
+        if selectedPlayerName then
+            local target = Players:FindFirstChild(selectedPlayerName)
+            if target then
+                FlingBall(target)
+            end
+        end
+    end
+})
+
+-- قسم تطيير القوارب
+TrollTab:AddSection({ Name = "تطيير القوارب" })
+TrollTab:AddButton({
+    Name = "تطيير - قارب",
+    Callback = function()
+        if selectedPlayerName then
+            FlingBoat(selectedPlayerName)
+        else
+            print("لم يتم اختيار لاعب")
+        end
+    end
+})
+TrollTab:AddButton({
+    Name = "إيقاف تطيير القارب",
+    Callback = StopBoatFling
+})
+
+-- قسم طرق القتل بالنقر
+TrollTab:AddSection({ Name = "طرق القتل بالنقر" })
+TrollTab:AddButton({
+    Name = "تطاير بالأبواب [بيتا]",
+    Callback = ClickFlingDoors
+})
+TrollTab:AddButton({
+    Name = "تطاير بالكنبة (أداة)",
+    Callback = ClickFlingCouchTool
+})
+TrollTab:AddButton({
+    Name = "تطيير بالكرة (أداة)",
+    Callback = ClickFlingBallTool
+})
+TrollTab:AddButton({
+    Name = "قتل بالكنبة (أداة)",
+    Callback = ClickKillCouchTool
+})
+
+-- قسم طرق القتل الجماعية
+TrollTab:AddSection({ Name = "طرق القتل الجماعية" })
+TrollTab:AddButton({
+    Name = "قتل الجميع بالباص",
+    Callback = KillAllBus
+})
+TrollTab:AddButton({
+    Name = "قتل الجميع باند البيت",
+    Callback = KillAllHouseBan
+})
+TrollTab:AddButton({
+    Name = "تطيير القارب للجميع",
+    Callback = FlingBoatAll
+})
+TrollTab:AddButton({
+    Name = "تطاير تلقائي للجميع",
+    Callback = function()
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                StartAutoFling(plr)
+                task.wait(0.5)
+            end
+        end
+    end
+})
+TrollTab:AddButton({
+    Name = "سحب الجميع بالكنبة [الأفضل]",
+    Callback = BringAllCouch
+})
+TrollTab:AddButton({
+    Name = "قتل الجميع بالكنبة [الأفضل]",
+    Callback = KillAllCouch
+})
+TrollTab:AddButton({
+    Name = "تطيير بالكرة للجميع",
+    Callback = FlingBallAll
+})
+
+-- ==================== تبويب اللاعب المحلي ====================
+local LocalPlayerTab = Window:MakeTab({ Title = "اللاعب المحلي", Icon = "user" })
+
+-- قسم السرعة والجاذبية والقفز
+local SpeedGravitySection = LocalPlayerTab:AddSection({ Name = "السرعة، الجاذبية والقفز" })
+
+LocalPlayerTab:AddTextBox({
+    Name = "سرعة اللاعب",
+    PlaceholderText = "أدخل السرعة",
+    Callback = function(value)
+        local speed = tonumber(value)
+        if speed and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = speed
+            print("تم ضبط السرعة إلى " .. speed)
+        else
+            warn("سرعة غير صالحة")
+        end
+    end
+})
+
+LocalPlayerTab:AddButton({
+    Name = "إعادة ضبط السرعة",
+    Callback = function()
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = 16
+            print("تم إعادة ضبط السرعة")
+        end
+    end
+})
+
+LocalPlayerTab:AddTextBox({
+    Name = "قوة القفز",
+    PlaceholderText = "أدخل ارتفاع القفز",
+    Callback = function(value)
+        local jumpHeight = tonumber(value)
+        if jumpHeight and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.JumpPower = jumpHeight
+            print("تم ضبط قوة القفز إلى " .. jumpHeight)
+        else
+            warn("ارتفاع قفز غير صالح")
+        end
+    end
+})
+
+LocalPlayerTab:AddButton({
+    Name = "إعادة ضبط القفز",
+    Callback = function()
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.JumpPower = 50
+            print("تم إعادة ضبط القفز")
+        end
+    end
+})
+
+LocalPlayerTab:AddTextBox({
+    Name = "الجاذبية",
+    PlaceholderText = "أدخل الجاذبية",
+    Callback = function(value)
+        local gravity = tonumber(value)
+        if gravity then
+            workspace.Gravity = gravity
+            print("تم ضبط الجاذبية إلى " .. gravity)
+        else
+            warn("جاذبية غير صالحة")
+        end
+    end
+})
+
+LocalPlayerTab:AddButton({
+    Name = "إعادة ضبط الجاذبية",
+    Callback = function()
+        workspace.Gravity = 196.2
+        print("تم إعادة ضبط الجاذبية")
+    end
+})
+
+-- قسم تضخيم الدردشة
+local SpamChatSection = LocalPlayerTab:AddSection({ Name = "تضخيم الدردشة" })
+
+local function sendchat(msg)
+    if not msg or msg == "" then return end
+    local tcs = game:GetService("TextChatService")
+    if tcs.ChatVersion == Enum.ChatVersion.LegacyChatService then
+        pcall(function()
+            game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents").SayMessageRequest:FireServer(msg, "All")
+        end)
+    else
+        local chat = tcs.ChatInputBarConfiguration and tcs.ChatInputBarConfiguration.TargetTextChannel
+        if chat then
+            pcall(function() chat:SendAsync(msg) end)
+        end
+    end
+end
+
+local spamMessage = ""
+local spamDelay = 1
+local spamActive = false
+
+LocalPlayerTab:AddTextBox({
+    Name = "أدخل النص",
+    PlaceholderText = "اكتب الرسالة",
+    Callback = function(text)
+        spamMessage = text
+    end
+})
+
+LocalPlayerTab:AddButton({
+    Name = "إرسال الدردشة",
+    Callback = function()
+        sendchat(spamMessage)
+        print("تم إرسال: " .. spamMessage)
+    end
+})
+
+LocalPlayerTab:AddSlider({
+    Name = "تأخير التضخيم",
+    Min = 0.4,
+    Max = 10,
+    Default = 1,
+    Increment = 0.1,
+    Callback = function(value)
+        spamDelay = value
+    end
+})
+
+LocalPlayerTab:AddToggle({
+    Name = "تضخيم الدردشة",
+    Default = false,
+    Callback = function(value)
+        spamActive = value
+        if value then
+            task.spawn(function()
+                while spamActive do
+                    sendchat(spamMessage)
+                    task.wait(spamDelay)
+                end
+            end)
+            print("بدء تضخيم الدردشة")
+        else
+            print("إيقاف تضخيم الدردشة")
+        end
+    end
+})
+
+LocalPlayerTab:AddButton({
+    Name = "تضخيم الدردشة (مخترق)",
+    Callback = function()
+        if game:GetService("TextChatService").ChatVersion == Enum.ChatVersion.TextChatService then
+            game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("hi\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\rالخادم: تم اختراقه بواسطة Zyronis Hub")
+            print("تم إرسال رسالة اختراق")
+        else
+            print("لا يمكن استخدام هذه الميزة في هذا الخادم")
+        end
+    end
+})
+
+LocalPlayerTab:AddButton({
+    Name = "مسح الدردشة",
+    Callback = function()
+        if game:GetService("TextChatService").ChatVersion == Enum.ChatVersion.TextChatService then
+            game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("hi\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\rالخادم: تم مسح الدردشة")
+            print("تم مسح الدردشة")
+        else
+            print("لا يمكن استخدام هذه الميزة في هذا الخادم")
+        end
+    end
+})
+
+-- قسم الجلوس على الرأس
+local HeadsitSection = LocalPlayerTab:AddSection({ Name = "الجلوس على الرأس (حصان)" })
+
+local selectedHeadPlayer = nil
+local headSitConnection = nil
+
+local headSitDropdown = LocalPlayerTab:AddDropdown({
+    Name = "اختر لاعباً",
+    Options = getPlayerList(),
+    Default = "",
+    Callback = function(value)
+        selectedHeadPlayer = value
+    end
+})
+
+LocalPlayerTab:AddToggle({
+    Name = "الجلوس على الرأس (حصان)",
+    Default = false,
+    Callback = function(bool)
+        if not selectedHeadPlayer or selectedHeadPlayer == "" then
+            warn("لم يتم اختيار لاعب للجلوس على رأسه!")
+            return
+        end
+        local targetPlayer = Players:FindFirstChild(selectedHeadPlayer)
+        if bool then
+            if targetPlayer and targetPlayer.Character then
+                local char = LocalPlayer.Character
+                if not char then return end
+                local humanoid = char:FindFirstChildOfClass("Humanoid")
+                local rootPart = char:FindFirstChild("HumanoidRootPart")
+                if not humanoid or not rootPart then return end
+                humanoid.Sit = true
+                if headSitConnection then headSitConnection:Disconnect() end
+                headSitConnection = RunService.Heartbeat:Connect(function()
+                    if targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") and humanoid.Sit then
+                        local targetHead = targetPlayer.Character.Head
+                        rootPart.CFrame = targetHead.CFrame * CFrame.Angles(0, 0, 0) * CFrame.new(0, 1.6, 0.4)
+                    else
+                        if headSitConnection then
+                            headSitConnection:Disconnect()
+                            headSitConnection = nil
+                            humanoid.Sit = false
+                        end
+                    end
+                end)
+                print("بدء الجلوس على رأس " .. selectedHeadPlayer)
+            else
+                warn("اللاعب المختار غير موجود أو ليس لديه شخصية!")
+            end
+        else
+            if headSitConnection then
+                headSitConnection:Disconnect()
+                headSitConnection = nil
+            end
+            local char = LocalPlayer.Character
+            if char then
+                local humanoid = char:FindFirstChildOfClass("Humanoid")
+                if humanoid then humanoid.Sit = false end
+            end
+            print("إيقاف الجلوس على الرأس")
+        end
+    end
+})
+
+LocalPlayerTab:AddButton({
+    Name = "تحديث قائمة اللاعبين",
+    Callback = function()
+        local newList = getPlayerList()
+        if headSitDropdown and newList then
+            pcall(function()
+                if headSitDropdown.SetOptions then headSitDropdown:SetOptions(newList)
+                elseif headSitDropdown.Set then headSitDropdown:Set(newList)
+                elseif headSitDropdown.Refresh then headSitDropdown:Refresh(newList)
+                end
+            end)
+            if selectedHeadPlayer and not Players:FindFirstChild(selectedHeadPlayer) then
+                selectedHeadPlayer = nil
+                if headSitDropdown.SetValue then pcall(function() headSitDropdown:SetValue("") end) end
+            end
+        end
+    end
+})
+
+-- ==================== تبويب Skybox ====================
+local SkyboxTab = Window:MakeTab({ Title = "Skybox", Icon = "cloud" })
+SkyboxTab:AddSection({ "Skybox بواسطة Bazuka" })
+
+SkyboxTab:AddButton({
+    Name = "Skybox",
+    Callback = function()
+        loadstring(game:HttpGet("https://api.rubis.app/v2/scrap/qZkSict1retkqFIr/raw"))()
+    end
+})
+
+-- Nuke Skybox (مبسط بدون أنيميشن لتجنب الأخطاء)
+SkyboxTab:AddToggle({
+    Name = "Nuke Skybox",
+    Default = false,
+    Callback = function(value)
+        if value then
+            print("تفعيل Nuke Skybox")
+            -- هنا يمكن إضافة كود التأثير
+        else
+            print("إيقاف Nuke Skybox")
+        end
+    end
+})
+
+SkyboxTab:AddToggle({
+    Name = "Nuke FlashBack",
+    Default = false,
+    Callback = function(value)
+        if value then
+            print("تفعيل Nuke FlashBack")
+        else
+            print("إيقاف Nuke FlashBack")
+        end
+    end
+})
+
+-- أحداث إضافية
+LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+    print("تم تغيير الشخصية")
+    -- تنظيف الكنبة إذا لزم الأمر
+end) 
