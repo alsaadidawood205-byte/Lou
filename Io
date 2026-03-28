@@ -1,0 +1,231 @@
+-- [[ Professional Delta Script: Dual-Axis Sync Loading ]] --
+
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Stats = game:GetService("Stats")
+
+local player = Players.LocalPlayer
+local startTime = os.time()
+
+-- إنشاء الواجهة الرئيسية
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "Delta_Sync_Loader"
+ScreenGui.Parent = CoreGui
+ScreenGui.IgnoreGuiInset = true
+
+-- 1. شاشة الخلفية (شفافة بالكامل)
+local BackgroundFrame = Instance.new("Frame")
+BackgroundFrame.Size = UDim2.new(1, 0, 1, 0)
+BackgroundFrame.BackgroundTransparency = 1 -- شفافة
+BackgroundFrame.Parent = ScreenGui
+
+-- 2. المستطيل الأسود المركزي
+local CentralModal = Instance.new("Frame")
+CentralModal.Name = "CentralModal"
+CentralModal.Parent = BackgroundFrame
+CentralModal.AnchorPoint = Vector2.new(0.5, 0.5)
+CentralModal.Position = UDim2.new(0.5, 0, 0.5, 0)
+CentralModal.Size = UDim2.new(0, 350, 0, 350) -- مربع كبير يحتوي الحركتين
+CentralModal.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+CentralModal.BackgroundTransparency = 0.4 -- أسود شفاف ناعم
+
+local ModalCorner = Instance.new("UICorner")
+ModalCorner.CornerRadius = UDim.new(0, 20)
+ModalCorner.Parent = CentralModal
+
+-- عنوان التحميل
+local LoadLabel = Instance.new("TextLabel")
+LoadLabel.Parent = CentralModal
+LoadLabel.Size = UDim2.new(1, 0, 0, 40)
+LoadLabel.Position = UDim2.new(0, 0, 0.1, 0)
+LoadLabel.BackgroundTransparency = 1
+LoadLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+LoadLabel.Font = Enum.Font.GothamBold
+LoadLabel.TextSize = 22
+LoadLabel.Text = "SYSTEM SYNCING"
+
+-- النسبة المئوية في المنتصف
+local PercentLabel = Instance.new("TextLabel")
+PercentLabel.Parent = CentralModal
+PercentLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+PercentLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+PercentLabel.Size = UDim2.new(0, 100, 0, 40)
+PercentLabel.BackgroundTransparency = 1
+PercentLabel.TextColor3 = Color3.fromRGB(0, 255, 255) -- لون نيون
+PercentLabel.Font = Enum.Font.Code
+PercentLabel.TextSize = 28
+PercentLabel.Text = "0%"
+
+-- [[ تصميم أشرطة التحميل المتقاطعة ]] --
+
+local BarColor = Color3.fromRGB(0, 255, 150) -- لون التحميل الأخضر
+local BarThickness = 6
+
+-- 3. الشريط الأفقي (بالعرض) - خلفية
+local HorizontalBG = Instance.new("Frame")
+HorizontalBG.Parent = CentralModal
+HorizontalBG.AnchorPoint = Vector2.new(0.5, 0.5)
+HorizontalBG.Position = UDim2.new(0.5, 0, 0.5, 0)
+HorizontalBG.Size = UDim2.new(0.8, 0, 0, BarThickness)
+HorizontalBG.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+HorizontalBG.BorderSizePixel = 0
+
+-- الشريط الأفقي - التحميل الفعلي
+local HorizontalBar = Instance.new("Frame")
+HorizontalBar.Parent = HorizontalBG
+HorizontalBar.Size = UDim2.new(0, 0, 1, 0) -- يبدأ بعرض 0
+HorizontalBar.BackgroundColor3 = BarColor
+HorizontalBar.BorderSizePixel = 0
+
+-- 4. الشريط العمودي (بالطول) - خلفية
+local VerticalBG = Instance.new("Frame")
+VerticalBG.Parent = CentralModal
+VerticalBG.AnchorPoint = Vector2.new(0.5, 0.5)
+VerticalBG.Position = UDim2.new(0.5, 0, 0.5, 0)
+VerticalBG.Size = UDim2.new(0, BarThickness, 0.8, 0)
+VerticalBG.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+VerticalBG.BorderSizePixel = 0
+
+-- الشريط العمودي - التحميل الفعلي
+local VerticalBar = Instance.new("Frame")
+VerticalBar.Parent = VerticalBG
+VerticalBar.AnchorPoint = Vector2.new(0.5, 1) -- يمتلئ من الأسفل للأعلى
+VerticalBar.Position = UDim2.new(0.5, 0, 1, 0)
+VerticalBar.Size = UDim2.new(1, 0, 0, 0) -- يبدأ بطول 0
+VerticalBar.BackgroundColor3 = BarColor
+VerticalBar.BorderSizePixel = 0
+
+-- [[ واجهات السكربت الأساسية (مخفية) ]] --
+local MainContent = Instance.new("Frame")
+MainContent.Size = UDim2.new(1, 0, 1, 0)
+MainContent.BackgroundTransparency = 1
+MainContent.Visible = false
+MainContent.Parent = ScreenGui
+
+-- (الرسالة الزجاجية)
+local GlassMsg = Instance.new("Frame")
+GlassMsg.Size = UDim2.new(0, 320, 0, 70)
+GlassMsg.Position = UDim2.new(0.5, -160, 0.5, -35)
+GlassMsg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+GlassMsg.BackgroundTransparency = 0.7
+GlassMsg.Parent = MainContent
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 20)
+UICorner.Parent = GlassMsg
+
+local MsgLabel = Instance.new("TextLabel")
+MsgLabel.Size = UDim2.new(1, 0, 1, 0)
+MsgLabel.BackgroundTransparency = 1
+MsgLabel.Text = "سيب جوالك و انت مريح"
+MsgLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+MsgLabel.Font = Enum.Font.GothamBold
+MsgLabel.TextSize = 22
+MsgLabel.Parent = GlassMsg
+
+-- (العداد العلوي)
+local StatsFrame = Instance.new("Frame")
+StatsFrame.Size = UDim2.new(0, 260, 0, 45)
+StatsFrame.Position = UDim2.new(0.5, -130, 0, 40)
+StatsFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+StatsFrame.BackgroundTransparency = 0.4
+StatsFrame.Parent = MainContent
+
+local StatsCorner = Instance.new("UICorner")
+StatsCorner.CornerRadius = UDim.new(0, 12)
+StatsCorner.Parent = StatsFrame
+
+local StatsLabel = Instance.new("TextLabel")
+StatsLabel.Size = UDim2.new(1, 0, 1, 0)
+StatsLabel.BackgroundTransparency = 1
+StatsLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
+StatsLabel.Font = Enum.Font.Code
+StatsLabel.TextSize = 14
+StatsLabel.Parent = StatsFrame
+
+-- [[ أنيميشن التحميل المتزامن ]] --
+
+local loadingTime = 4 -- مدة التحميل بالثواني
+
+task.spawn(function()
+    -- استخدام TweenService لضمان التزامن المثالي
+    local tweenInfo = TweenInfo.new(loadingTime, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
+    
+    local tweenH = TweenService:Create(HorizontalBar, tweenInfo, {Size = UDim2.new(1, 0, 1, 0)})
+    local tweenV = TweenService:Create(VerticalBar, tweenInfo, {Size = UDim2.new(1, 0, 1, 0)})
+    
+    tweenH:Play()
+    tweenV:Play()
+    
+    -- تحديث النسبة المئوية يدوياً ليتناسب مع التوين
+    local l_start = os.clock()
+    while os.clock() - l_start < loadingTime do
+        local progress = math.floor(((os.clock() - l_start) / loadingTime) * 100)
+        if progress > 100 then progress = 100 end
+        PercentLabel.Text = progress .. "%"
+        task.wait()
+    end
+    PercentLabel.Text = "100%"
+    
+    -- انتهاء التحميل، إخفاء شاشة التحميل فوراً
+    local fadeOutInfo = TweenInfo.new(0.5, Enum.EasingStyle.Linear)
+    local fadeOut = TweenService:Create(CentralModal, fadeOutInfo, {BackgroundTransparency = 1, Size = UDim2.new(0, 0, 0, 0)})
+    fadeOut:Play()
+    
+    -- إخفاء النصوص والأشرطة بالداخل
+    for _, child in pairs(CentralModal:GetDescendants()) do
+        if child:IsA("TextLabel") then
+            TweenService:Create(child, fadeOutInfo, {TextTransparency = 1}):Play()
+        elseif child:IsA("Frame") then
+            TweenService:Create(child, fadeOutInfo, {BackgroundTransparency = 1}):Play()
+        end
+    end
+    
+    task.wait(0.5)
+    BackgroundFrame:Destroy() -- حذف شاشة التحميل
+    
+    -- تشغيل السكربت مباشرة
+    MainContent.Visible = true
+    
+    -- تأثير اختفاء الرسالة الزجاجية بعد 6 ثواني
+    task.wait(6)
+    local glassFade = TweenInfo.new(1.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    TweenService:Create(GlassMsg, glassFade, {BackgroundTransparency = 1, Position = UDim2.new(0.5, -160, 0.4, -35)}):Play()
+    TweenService:Create(MsgLabel, glassFade, {TextTransparency = 1}):Play()
+    task.wait(1.5)
+    GlassMsg:Destroy()
+end)
+
+-- [[ ميزات الخلفية المحرك الرئيسي ]] --
+
+-- تحديث الـ FPS والوقت
+RunService.RenderStepped:Connect(function()
+    if MainContent.Visible then
+        local fps = math.floor(1 / RunService.RenderStepped:Wait())
+        local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+        local diff = os.time() - startTime
+        local h, m, s = math.floor(diff/3600), math.floor((diff%3600)/60), diff%60
+        StatsLabel.Text = string.format("FPS: %d | Ping: %dms\nUptime: %02d:%02d:%02d", fps, ping, h, m, s)
+    end
+end)
+
+-- Anti-AFK
+local VirtualUser = game:GetService("VirtualUser")
+player.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
+
+-- Anti-Kick
+local mt = getrawmetatable(game)
+local old = mt.__namecall
+setreadonly(mt, false)
+mt.__namecall = newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    if method == "Kick" or method == "kick" then return nil end
+    return old(self, ...)
+end)
+setreadonly(mt, true)
+
