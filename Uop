@@ -1,0 +1,218 @@
+--[[
+    MAITHAM HUB v2.3 - Rayfield Edition
+    المطور: ميثم M2
+    المميزات: بانق، أوتو كليك، حماية، RP Name RGB، حقوق كاملة
+    الواجهة: Rayfield UI Library
+]]
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local lp = Players.LocalPlayer
+
+-- [ تحميل Rayfield ]
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "MAITHAM HUB",
+   LoadingTitle = "جاري تحميل MAITHAM HUB...",
+   LoadingSubtitle = "by ميثم M2",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "MaithamHub",
+      FileName = "MaithamConfig"
+   }
+})
+
+-- ═══════════════════════════════════════
+-- [ نظام الـ RP Name & Bio الأصلي ]
+-- ═══════════════════════════════════════
+pcall(function()
+    local RE = ReplicatedStorage:WaitForChild("RE", 2)
+    if RE then
+        local NameTextEvent = RE:WaitForChild("1RPNam1eTex1t", 2)
+        local NameColorEvent = RE:WaitForChild("1RPNam1eColo1r", 2)
+        
+        local function fireEvent(event, ...)
+            if event then event:FireServer(...) end
+        end
+        
+        -- تعيين النصوص الأصلية باسمك
+        fireEvent(NameTextEvent, "RolePlayName", "المطور ميثم M2")
+        fireEvent(NameTextEvent, "RolePlayBio", "DEVELOPER - MAITHAM M2")
+        
+        -- نظام الألوان المتحركة (RGB)
+        task.spawn(function()
+            local hue = 0
+            while true do
+                hue = (hue + 0.01) % 1
+                local color = Color3.fromHSV(hue, 1, 1)
+                pcall(function()
+                    fireEvent(NameColorEvent, "PickingRPNameColor", color)
+                    fireEvent(NameColorEvent, "PickingRPBioColor", color)
+                end)
+                task.wait(0.05)
+            end
+        end)
+    end
+end)
+
+-- ═══════════════════════════════════════
+-- المتغيرات العامة للبانق
+-- ═══════════════════════════════════════
+local foundPlayer = nil
+local faceSitEnabled = false
+local bangEnabled = false
+local bangTarget = nil
+
+local function resetVel()
+    pcall(function()
+        if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            lp.Character.HumanoidRootPart.Velocity = Vector3.zero
+            if lp.Character:FindFirstChild("Humanoid") then
+                lp.Character.Humanoid.Sit = false
+            end
+        end
+    end)
+end
+
+RunService.Heartbeat:Connect(function()
+    pcall(function()
+        if (faceSitEnabled or bangEnabled) and bangTarget and bangTarget.Character then
+            local targetChar = bangTarget.Character
+            if not targetChar:FindFirstChild("HumanoidRootPart") then return end
+            local hrp = lp.Character.HumanoidRootPart
+            local move = math.sin(tick() * 150) * 1.5
+            hrp.Velocity = Vector3.zero
+            if faceSitEnabled and targetChar:FindFirstChild("Head") then
+                lp.Character.Humanoid.Sit = true
+                hrp.CFrame = targetChar.Head.CFrame * CFrame.new(0, 0.2, -0.5 + move) * CFrame.Angles(0, math.rad(180), 0)
+            elseif bangEnabled then
+                lp.Character.Humanoid.Sit = false
+                hrp.CFrame = targetChar.HumanoidRootPart.CFrame * CFrame.new(0, 0.5, 1.1 + move)
+            end
+        end
+    end)
+end)
+
+-- ═══════════════════════════════════════
+-- التبويبات
+-- ═══════════════════════════════════════
+
+-- 1. تبويب البانق (كما هو)
+local BangTab = Window:CreateTab("البانق 🔥", 4483362458)
+
+BangTab:CreateInput({
+   Name = "اسم الضحية",
+   PlaceholderText = "اكتب اسم اللاعب...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(text)
+      local searchText = text:lower()
+      for _, p in pairs(Players:GetPlayers()) do
+         if p.Name:lower():find(searchText) and p ~= lp then
+            foundPlayer = p
+            Rayfield:Notify({ Title = "MAITHAM HUB", Content = "تم تحديد الضحية: " .. p.Name, Duration = 3 })
+            return
+         end
+      end
+   end,
+})
+
+BangTab:CreateToggle({
+   Name = "تفعيل المص (FaceSit)",
+   CurrentValue = false,
+   Callback = function(value)
+      if value and not foundPlayer then
+         Rayfield:Notify({ Title = "خطأ", Content = "اختر ضحية أولاً!", Duration = 3 })
+         return
+      end
+      faceSitEnabled = value
+      bangEnabled = false
+      bangTarget = value and foundPlayer or nil
+      if not value then resetVel() end
+   end,
+})
+
+BangTab:CreateToggle({
+   Name = "تفعيل الاغتصاب (Bang)",
+   CurrentValue = false,
+   Callback = function(value)
+      if value and not foundPlayer then
+         Rayfield:Notify({ Title = "خطأ", Content = "اختر ضحية أولاً!", Duration = 3 })
+         return
+      end
+      bangEnabled = value
+      faceSitEnabled = false
+      bangTarget = value and foundPlayer or nil
+      if not value then resetVel() end
+   end,
+})
+
+BangTab:CreateButton({
+   Name = "إيقاف كل حركات البانق",
+   Callback = function()
+      faceSitEnabled = false
+      bangEnabled = false
+      bangTarget = nil
+      resetVel()
+      Rayfield:Notify({ Title = "MAITHAM HUB", Content = "تم الإيقاف بنجاح", Duration = 3 })
+   end,
+})
+
+-- 2. تبويب السكربتات (المحدث)
+local ScriptsTab = Window:CreateTab("السكربتات 📜", 4483362458)
+
+ScriptsTab:CreateButton({
+   Name = "Auto Clicker",
+   Callback = function()
+      loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-AUTOCLICK-48479"))()
+   end,
+})
+
+ScriptsTab:CreateButton({
+   Name = "Anti-AFK 2",
+   Callback = function()
+      loadstring(game:HttpGet("https://raw.githubusercontent.com/ArgetnarYT/scripts/main/AntiAfk2.lua"))()
+   end,
+})
+
+ScriptsTab:CreateButton({
+   Name = "No9at Samlat",
+   Callback = function()
+      loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-NO9AT-SAMLAT-47637"))()
+   end,
+})
+
+ScriptsTab:CreateButton({
+   Name = "Anti-AFK by Hassan",
+   Callback = function()
+      loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/Anti-afk/main/antiafkbyhassanxzyn"))()
+   end,
+})
+
+-- 3. تبويب المطور (الحقوق كما هي)
+local DevTab = Window:CreateTab(" المطورين", 4483362458)
+
+DevTab:CreateLabel(" المطور الرئيسي")
+DevTab:CreateLabel("━━━━━━━━━━━━━━━━━━━━━━")
+
+DevTab:CreateParagraph({
+   Title = "ميثم M2",
+   Content = "المطور الرسمي لـ MAITHAM HUB\nاسم المستخدم: @MaithamM2_Dev\n\nDEVELOPER - MAITHAM M2"
+})
+
+DevTab:CreateLabel("━━━━━━━━━━━━━━━━━━━━━━")
+DevTab:CreateLabel(" إحصائيات MAITHAM HUB")
+DevTab:CreateLabel("━━━━━━━━━━━━━━━━━━━━━━")
+DevTab:CreateLabel("الإصدار: v2.3 Rayfield Edition")
+DevTab:CreateLabel("بواسطة: ميثم M2")
+
+-- الإشعار النهائي
+Rayfield:Notify({
+   Title = "MAITHAM HUB",
+   Content = "تم التحميل بنجاح! نورت يا ميثم M2",
+   Duration = 5
+})
+
+print("MAITHAM HUB v2.3 | Loaded by Maitham M2")
