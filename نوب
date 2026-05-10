@@ -1,0 +1,303 @@
+-- CLAN VIP - نظام دخول وخروج + حماية متكاملة
+-- تم التصميم من جديد بشكل احترافي
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+-- ============================================
+-- الحماية الفورية (مانع طرد + مانع خمول)
+-- ============================================
+
+-- 1. مانع الطرد (يمنع أي محاولة لطردك)
+local OriginalKick = LocalPlayer.Kick
+LocalPlayer.Kick = function(self, ...)
+    -- منع الطرد نهائياً
+    return nil
+end
+
+-- 2. مانع الخمول (يمنع فصل اللعبة لعدم الحركة)
+pcall(function()
+    local VirtualUser = game:GetService("VirtualUser")
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+    game:GetService("Players").LocalPlayer.Idled:Connect(function()
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
+    end)
+end)
+
+-- طريقة احتياطية لمانع الخمول
+pcall(function()
+    local Connections = getconnections(LocalPlayer.Idled)
+    for i, Connection in pairs(Connections) do
+        Connection:Disable()
+    end
+end)
+
+-- ============================================
+-- تصميم الواجهة (شكل جديد كلياً)
+-- ============================================
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CLAN_VIP_System"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = CoreGui
+
+-- النافذة الرئيسية (تصميم عصري)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 280, 0, 160)
+MainFrame.Position = UDim2.new(0.5, -140, 0.5, -80)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+
+-- إطار خارجي أنيق
+local OuterFrame = Instance.new("Frame")
+OuterFrame.Size = UDim2.new(1, 4, 1, 4)
+OuterFrame.Position = UDim2.new(0, -2, 0, -2)
+OuterFrame.BackgroundTransparency = 1
+OuterFrame.BorderSizePixel = 0
+OuterFrame.Parent = MainFrame
+
+local OuterCorner = Instance.new("UICorner")
+OuterCorner.CornerRadius = UDim.new(0, 12)
+OuterCorner.Parent = OuterFrame
+
+-- الزوايا الدائرية الرئيسية
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+-- الحدود الحمراء المتوهجة
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(255, 0, 0)
+MainStroke.Thickness = 2.5
+MainStroke.Transparency = 0.3
+MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MainStroke.Parent = MainFrame
+
+-- تأثير الوهج الأحمر
+local GlowEffect = Instance.new("BloomEffect")
+GlowEffect.Intensity = 0.5
+GlowEffect.Size = 16
+GlowEffect.Threshold = 0.8
+GlowEffect.Parent = MainFrame
+
+-- شريط العنوان المميز
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+TitleBar.BackgroundTransparency = 0.2
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.Parent = TitleBar
+
+-- النص الرئيسي (العلامة المائية)
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -50, 1, 0)
+TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "CLAN VIP"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+TitleLabel.TextSize = 12
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.TextYAlignment = Enum.TextYAlignment.Center
+TitleLabel.Parent = TitleBar
+
+-- النص الفرعي
+local SubLabel = Instance.new("TextLabel")
+SubLabel.Size = UDim2.new(1, -50, 1, 0)
+SubLabel.Position = UDim2.new(0, 10, 0, 14)
+SubLabel.BackgroundTransparency = 1
+SubLabel.Text = "حماية الطرد والخمول"
+SubLabel.TextColor3 = Color3.fromRGB(200, 100, 100)
+SubLabel.TextSize = 8
+SubLabel.Font = Enum.Font.Gotham
+SubLabel.TextXAlignment = Enum.TextXAlignment.Left
+SubLabel.TextYAlignment = Enum.TextYAlignment.Center
+SubLabel.Parent = TitleBar
+
+-- زر الإغلاق
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseBtn.Position = UDim2.new(1, -30, 0.5, -12)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+CloseBtn.TextSize = 12
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = TitleBar
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- منطقة سجل الدخول والخروج
+local LogScroll = Instance.new("ScrollingFrame")
+LogScroll.Size = UDim2.new(0.96, 0, 1, -42)
+LogScroll.Position = UDim2.new(0.02, 0, 0, 34)
+LogScroll.BackgroundTransparency = 1
+LogScroll.ScrollBarThickness = 2
+LogScroll.ScrollBarImageColor3 = Color3.fromRGB(150, 0, 0)
+LogScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+LogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+LogScroll.Parent = MainFrame
+
+-- تنسيق العناصر
+local ListLayout = Instance.new("UIListLayout")
+ListLayout.Padding = UDim.new(0, 2)
+ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ListLayout.Parent = LogScroll
+
+local Padding = Instance.new("UIPadding")
+Padding.PaddingLeft = UDim.new(0, 6)
+Padding.PaddingRight = UDim.new(0, 6)
+Padding.PaddingTop = UDim.new(0, 4)
+Padding.PaddingBottom = UDim.new(0, 4)
+Padding.Parent = LogScroll
+
+-- شريط الإحصائيات السفلي
+local StatsBar = Instance.new("Frame")
+StatsBar.Size = UDim2.new(1, 0, 0, 20)
+StatsBar.Position = UDim2.new(0, 0, 1, -20)
+StatsBar.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+StatsBar.BackgroundTransparency = 0.3
+StatsBar.BorderSizePixel = 0
+StatsBar.Parent = MainFrame
+
+local StatsCorner = Instance.new("UICorner")
+StatsCorner.CornerRadius = UDim.new(0, 6)
+StatsCorner.Parent = StatsBar
+
+-- عداد المتصلين
+local OnlineCount = Instance.new("TextLabel")
+OnlineCount.Size = UDim2.new(0.5, 0, 1, 0)
+OnlineCount.BackgroundTransparency = 1
+OnlineCount.Text = "📊 0"
+OnlineCount.TextColor3 = Color3.fromRGB(100, 255, 100)
+OnlineCount.TextSize = 9
+OnlineCount.Font = Enum.Font.GothamBold
+OnlineCount.TextXAlignment = Enum.TextXAlignment.Center
+OnlineCount.Parent = StatsBar
+
+-- حالة الحماية
+local ProtectionStatus = Instance.new("TextLabel")
+ProtectionStatus.Size = UDim2.new(0.5, 0, 1, 0)
+ProtectionStatus.Position = UDim2.new(0.5, 0, 0, 0)
+ProtectionStatus.BackgroundTransparency = 1
+ProtectionStatus.Text = "🛡️ محمي"
+ProtectionStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+ProtectionStatus.TextSize = 9
+ProtectionStatus.Font = Enum.Font.GothamBold
+ProtectionStatus.TextXAlignment = Enum.TextXAlignment.Center
+ProtectionStatus.Parent = StatsBar
+
+-- ============================================
+-- دوال تسجيل الدخول والخروج
+-- ============================================
+
+local PlayerList = {}
+
+local function AddLog(message, color)
+    local logLabel = Instance.new("TextLabel")
+    logLabel.Size = UDim2.new(1, 0, 0, 16)
+    logLabel.BackgroundTransparency = 1
+    logLabel.Text = message
+    logLabel.TextColor3 = color or Color3.fromRGB(220, 220, 220)
+    logLabel.TextSize = 9
+    logLabel.Font = Enum.Font.Gotham
+    logLabel.TextXAlignment = Enum.TextXAlignment.Left
+    logLabel.Parent = LogScroll
+    
+    -- تأثير ظهور بسيط
+    logLabel.TextTransparency = 1
+    TweenService:Create(logLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {TextTransparency = 0}):Play()
+    
+    task.wait(0.05)
+    LogScroll.CanvasPosition = Vector2.new(0, LogScroll.CanvasSize.Y.Offset)
+end
+
+local function UpdateOnlineCount()
+    local count = #Players:GetPlayers()
+    OnlineCount.Text = "📊 " .. count
+end
+
+-- تسجيل الدخول
+Players.PlayerAdded:Connect(function(player)
+    if player ~= LocalPlayer then
+        AddLog("➕ " .. player.Name .. " دخل", Color3.fromRGB(100, 255, 100))
+    end
+    UpdateOnlineCount()
+end)
+
+-- تسجيل الخروج
+Players.PlayerRemoving:Connect(function(player)
+    AddLog("➖ " .. player.Name .. " خرج", Color3.fromRGB(255, 100, 100))
+    UpdateOnlineCount()
+end)
+
+-- تسجيل اللاعبين الموجودين عند التشغيل
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        table.insert(PlayerList, player.Name)
+        AddLog("➕ " .. player.Name .. " دخل", Color3.fromRGB(100, 255, 100))
+    end
+end
+
+-- رسالة الترحيب
+AddLog("━━━━━━━━━━━━━━━━━━━━", Color3.fromRGB(150, 150, 150))
+AddLog("✨ نظام CLAN VIP يعمل", Color3.fromRGB(200, 100, 255))
+AddLog("🛡️ الحماية نشطة بالكامل", Color3.fromRGB(100, 255, 100))
+AddLog("━━━━━━━━━━━━━━━━━━━━", Color3.fromRGB(150, 150, 150))
+
+UpdateOnlineCount()
+
+-- ============================================
+-- تحريك النافذة
+-- ============================================
+
+local Dragging = false
+local DragStart, StartPos
+
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        Dragging = true
+        DragStart = input.Position
+        StartPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                Dragging = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local Delta = input.Position - DragStart
+        MainFrame.Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + Delta.X, StartPos.Y.Scale, StartPos.Y.Offset + Delta.Y)
+    end
+end)
+
+-- وميض بسيط للحماية للدلالة على أنها نشطة
+task.spawn(function()
+    while ScreenGui and ScreenGui.Parent do
+        ProtectionStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+        task.wait(0.5)
+        ProtectionStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
+        task.wait(0.5)
+    end
+end)
+
+return ScreenGui
